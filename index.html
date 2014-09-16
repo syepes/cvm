@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>CVM by syepes</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/syepes/cvm">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/syepes/cvm/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/syepes/cvm/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>CVM</h1>
+          <p>CVM (Configuration Versioning Manager) is an open source, generic device configuration collector that uses Git as its change historization engine / RANCID alternative</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/syepes">syepes</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h1>
+<a name="cvm-configuration-versioning-manager" class="anchor" href="#cvm-configuration-versioning-manager"><span class="octicon octicon-link"></span></a>CVM (Configuration Versioning Manager)</h1>
+
+<hr><p>CVM is an open source, generic device configuration collector that uses Git as its change historization engine.
+Its a more modern alternative to <a href="http://www.shrubbery.net/rancid/">RANCID</a></p>
+
+<p>A Brief Overview  of how CVM works:</p>
+
+<pre><code>- Retrieves the list of devices from either a static file (json) or dynamically from NNMi
+- Logs into each device using the matching Authentication Profile taking advantage of Parallelism
+- Runs the defined commands on the device and collects their expected output
+- Cleans Up the output by removing sensitive and unnecessary data
+- Individually saves the resulting output of each command locally in the file system
+- A per device Git Repository is created and maintained with all the device commands
+</code></pre>
+
+<h2>
+<a name="notes" class="anchor" href="#notes"><span class="octicon octicon-link"></span></a>Notes</h2>
+
+<pre><code>This is the first release of CVM and its currently working 100% for my use case. It still needs more work in the following areas:
+- Rewrite the Device Profile assignation, right now profiles can only be assigned by vendor name but it should also be possible to assign them by device type or model (Something like the Device Authentication Profiles: deviceAuth.groovy)
+- Support The Cisco privilege mode (enable mode) authentication
+- Write more documentation on all the possible configurations options
+</code></pre>
+
+<h2>
+<a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h2>
+
+<ul>
+<li>Collects and Processes device data concurrently (GPars)</li>
+<li>Supports any SSH enabled device (v2+ Only)</li>
+<li>Independent Git Repository for each collected device</li>
+<li>Integration with <a href="http://www8.hp.com/us/en/software-solutions/network-node-manager-i-network-management-software/">HP NNMi</a> for device discovery</li>
+<li>Device Profile schema validator</li>
+</ul><h2>
+<a name="working-device-profiles" class="anchor" href="#working-device-profiles"><span class="octicon octicon-link"></span></a>Working Device Profiles</h2>
+
+<ul>
+<li>Cisco:
+
+<ul>
+<li>Routers/Switchs/Nexus (Using TACACS+ enable mode account)</li>
+</ul>
+</li>
+<li>Fortinet
+
+<ul>
+<li>FortiGate Firewalls</li>
+</ul>
+</li>
+<li>JuniperNetworks
+
+<ul>
+<li>Juniper</li>
+</ul>
+</li>
+</ul><h2>
+<a name="requirements" class="anchor" href="#requirements"><span class="octicon octicon-link"></span></a>Requirements</h2>
+
+<ul>
+<li>
+<a href="http://www.java.com">Java</a> 1.7+</li>
+<li>
+<a href="http://www.gradle.org">Gradle</a> (Only if building the project from src)</li>
+</ul><h2>
+<a name="buildrun-from-master" class="anchor" href="#buildrun-from-master"><span class="octicon octicon-link"></span></a>Build/Run from master</h2>
+
+<ul>
+<li>clone repository</li>
+<li>gradle (in project root)</li>
+<li>The built release zip (build/dist/)</li>
+</ul><h2>
+<a name="installation-and-configuration" class="anchor" href="#installation-and-configuration"><span class="octicon octicon-link"></span></a>Installation and Configuration</h2>
+
+<p>Take a look at the CVM <a href="https://github.com/syepes/cvm/wiki">Wiki</a></p>
+
+<h2>
+<a name="contribute" class="anchor" href="#contribute"><span class="octicon octicon-link"></span></a>Contribute</h2>
+
+<p>If you have any idea for an improvement or find a bug do not hesitate in opening an issue.
+And if you have the time clone this repo and submit a pull request to help improve the CVM project.</p>
+
+<h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>CVM is distributed under Apache 2.0 License.</p>
+
+<h2>
+<a name="used-open-source-projects" class="anchor" href="#used-open-source-projects"><span class="octicon octicon-link"></span></a>Used open source projects</h2>
+
+<p><a href="http://groovy.codehaus.org">Groovy</a> |
+<a href="http://gpars.codehaus.org">GPars</a> |
+<a href="http://logback.qos.ch">Logback</a> |
+<a href="http://www.jcraft.com/jsch">JSch</a> |
+<a href="https://github.com/Alexey1Gavrilov/ExpectIt">ExpectIt</a> |
+<a href="http://www.eclipse.org/jgit">jGIT</a> |
+<a href="https://github.com/jwagenleitner/groovy-wslite">groovy-wslite</a> |
+<a href="https://github.com/fge/json-schema-validator">json-schema-validator</a></p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
