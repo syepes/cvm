@@ -1,0 +1,47 @@
+{
+    "name": "Linux",
+    "access": {
+        "timeout": 20,
+        "prompt_standard": [".*\\$\\s$"],
+        "explet_timeout": 10,
+        "explet_bufferSize": 2048,
+        "cmds_disable_more_prompt": [],
+        "explet_disable_more_prompt": [],
+        "cmds_post_login": [],
+        "explet_post_login": [],
+        "cmds_disconnect": ["exit"]
+    },
+    "commands": [
+      {
+        "name": "ifconfig",
+        "storage": "ifconfig.conf",
+        "send": ["ifconfig lo"],
+        "explet": [".*\\$\\s$"],
+        "explet_timeout": 10,
+        "strip_top": 0,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "route",
+        "storage": "route.conf",
+        "send": ["route"],
+        "explet": [".*\\$\\s$"],
+        "explet_timeout": 10,
+        "strip_top": 0,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "resolv",
+        "storage": "resolv.conf",
+        "send": ["cat /etc/resolv.conf"],
+        "explet": [".*\\$\\s$"],
+        "explet_timeout": 10,
+        "strip_top": 0,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      }
+    ]
+}
+

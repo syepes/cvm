@@ -1,0 +1,37 @@
+# /etc/cgitrc
+
+virtual-root=/cvm
+root-title=CVM
+root-desc=Configuration Versioning Manager
+#root-readme=/files/web/example.com/code/about.html
+css=/cvm/cgit.css
+logo=/cvm/cvm.png
+#favicon=/cvm/favicon.ico
+# don't index site
+robots=noindex, nofollow
+
+# Cache
+cache-size=5000
+cache-root=/var/cache/cgit
+# No Cache
+#nocache=1
+#cache-size=0
+
+# Styling
+enable-index-links=1
+enable-index-owner=0
+enable-log-filecount=1
+enable-log-linecount=1
+enable-commit-graph=1
+enable-git-config=1
+
+max-stats=year
+max-commit-count=100
+max-message-length=100
+#side-by-side-diffs=1
+
+# Rpositories
+max-repo-count=100
+repository-sort=age
+snapshots=tar.gz zip
+scan-path=/opt/cvm/repository/

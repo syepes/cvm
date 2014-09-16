@@ -1,0 +1,8 @@
+#!/bin/sh
+#0 */12 * * * /opt/cvm/cvm_cron
+export JAVA_HOME=/usr/java/latest
+export PATH=$JAVA_HOME/bin:$PATH:.
+export JAVA_OPTS='-server -Xmx1G -Xms350M -XX:+AggressiveOpts -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:+CMSClassUnloadingEnabled -XX:+UseCMSInitiatingOccupancyOnly -XX:+UseCompressedOops'
+
+cd /opt/cvm/
+java -Dpid=$$ -Dapp.env=PROD -jar $PWD/cvm.jar >> $PWD/logs/cvm_schedule.log 2>&1

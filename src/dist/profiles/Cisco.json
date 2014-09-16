@@ -1,0 +1,86 @@
+{
+    "name": "Cisco",
+    "access": {
+        "timeout": 30,
+        "prompt_standard": [".*#\\s*$"],
+        "explet_timeout": 30,
+        "explet_bufferSize": 3072,
+        "cmds_disable_more_prompt": ["terminal length 0"],
+        "explet_disable_more_prompt": [".*#\\s*$"],
+        "cmds_post_login": [],
+        "explet_post_login": [],
+        "cmds_disconnect": ["exit"]
+    },
+    "commands": [
+      {
+        "name": "running-config",
+        "storage": "running-config.cfg",
+        "send": ["show running-config"],
+        "explet": ["\\r\\n.*#\\s*$","\\r\\n\\r\\n.*#\\s*$",".*#\\s*$"],
+        "explet_timeout": 300,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": ["/\\r/g","", "/ --More-- [\\\\x8]+ +[\\\\x8]+/g","", "/(?m)^!Time:\\s.*/","", "/(Load for|Time source is|Current configuration :) .*\\n/g","", "/Building configuration\\.\\.\\.\\s+/","", "/(tacacs-server key).*/g","!$1 <REMOVED>", "/(enable (secret|password)).*/g","!$1 <REMOVED>", "/(?m)^(username.*secret).*/g","!$1 <REMOVED>", "/(?m)^(\\s+password)\\s+.*/g","!$1 <REMOVED>", "/(crypto isakmp key).*(address.*)/g","!$1 <REMOVED> $2", "/(ntp clock-period).*/g","!$1 <REMOVED>", "/(?m)^(username.*password\\s\\d+).*(role.*)/g","!$1 <REMOVED> $2"]
+      },
+      {
+        "name": "startup-config",
+        "storage": "startup-config.cfg",
+        "send": ["show startup-config"],
+        "explet": ["\\r\\n.*#\\s*$","\\r\\n\\r\\n.*#\\s*$",".*#\\s*$"],
+        "explet_timeout": 300,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": ["/\\r/g","", "/ --More-- [\\\\x8]+ +[\\\\x8]+/g","", "/(?m)^!Time:\\s.*/","", "/(Load for|Time source is|Current configuration :) .*\\n/g","", "/Building configuration\\.\\.\\.\\s+/","", "/(tacacs-server key).*/g","!$1 <REMOVED>", "/(enable (secret|password)).*/g","!$1 <REMOVED>", "/(?m)^(username.*secret).*/g","!$1 <REMOVED>", "/(?m)^(\\s+password)\\s+.*/g","!$1 <REMOVED>", "/(crypto isakmp key).*(address.*)/g","!$1 <REMOVED> $2", "/(?m)^(username.*password\\s\\d+).*(role.*)/g","!$1 <REMOVED> $2"]
+      },
+      {
+        "name": "version",
+        "storage": "version.cfg",
+        "send": ["show version"],
+        "explet": ["\\r\\n.*#\\s*$",".*#\\s*$"],
+        "explet_timeout": 30,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": ["/\\r/g","", "/ --More-- [\\\\x8]+ +[\\\\x8]+/g","", "/(?i).*uptime.*/g","", "/(?i).*restarted at.*/g",""]
+      },
+      {
+        "name": "flash",
+        "storage": "flash.cfg",
+        "send": ["show flash"],
+        "explet": ["\\r\\n.*#\\s*$",".*#\\s*$"],
+        "explet_timeout": 30,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": ["/\\r/g","", "/ --More-- [\\\\x8]+ +[\\\\x8]+/g","", "/.*(Ambiguous command|Invalid input detected at|Invalid command at).*/g","", "/(?m)^\\s*\\^\\s*$/g",""]
+      },
+      {
+        "name": "vlan",
+        "storage": "vlan.cfg",
+        "send": ["show vlan"],
+        "explet": ["\\r\\n.*#\\s*$",".*#\\s*$"],
+        "explet_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": ["/\\r/g","", "/ --More-- [\\\\x8]+ +[\\\\x8]+/g","", "/.*(Ambiguous command|Invalid input detected at|Invalid command at).*/g","", "/(?m)^\\s*\\^\\s*$/g",""]
+      },
+      {
+        "name": "vlan-switch",
+        "storage": "vlan-switch.cfg",
+        "send": ["show vlan-switch"],
+        "explet": ["\\r\\n.*#\\s*$",".*#\\s*$"],
+        "explet_timeout": 30,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": ["/\\r/g","", "/ --More-- [\\\\x8]+ +[\\\\x8]+/g","", "/.*(Ambiguous command|Invalid input detected at|Invalid command at).*/g","", "/(?m)^\\s*\\^\\s*$/g",""]
+      },
+      {
+        "name": "vtp",
+        "storage": "vtp.cfg",
+        "send": ["show vtp status"],
+        "explet": ["\\r\\n.*#\\s*$",".*#\\s*$"],
+        "explet_timeout": 30,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": ["/\\r/g","", "/ --More-- [\\\\x8]+ +[\\\\x8]+/g","", "/.*(Ambiguous command|Invalid input detected at|Invalid command at).*/g","", "/(?m)^\\s*\\^\\s*$/g",""]
+      }
+    ]
+}

@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Device Profile",
+    "description": "JSON representation of Device Profile",
+    "type": "object",
+    "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "access": {
+            "type": "object",
+            "properties": {
+                "timeout": { "type": "integer" },
+                "prompt_standard": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+                "explet_timeout": { "type": "integer", "minimum": 1 },
+                "explet_bufferSize": { "type": "integer", "minimum": 512 },
+                "cmds_disable_more_prompt": { "type": "array", "minItems": 0, "items": { "type": "string" } },
+                "explet_disable_more_prompt": { "type": "array", "minItems": 0, "items": { "type": "string" } },
+                "cmds_post_login": { "type": "array", "minItems": 0, "items": { "type": "string" } },
+                "explet_post_login": { "type": "array", "minItems": 0, "items": { "type": "string" } },
+                "cmds_disconnect": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+          },
+          "additionalProperties" : false,
+          "required": [ "prompt_standard","cmds_disconnect" ]
+        },
+        "commands": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "uniqueItems": true,
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "storage": { "type": "string", "minLength": 1 },
+                "send": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+                "explet": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+                "explet_timeout": { "type": "integer", "minimum": 1 },
+                "strip_top": { "type": "integer", "minimum": 0 },
+                "strip_down": { "type": "integer", "minimum": 0 },
+                "cleanup_patterns": { "type": "array", "minItems": 0, "items": { "type": "string" } }
+              },
+              "additionalProperties" : false,
+              "required": [ "name","storage","send","explet" ]
+            }
+        }
+    },
+    "additionalProperties" : false,
+    "required": [ "name","access","commands" ]
+}

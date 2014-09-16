@@ -1,0 +1,10 @@
+.gradle/
+build/
+logs/
+temp/
+*~
+*.swp
+.classpath
+.project
+.settings
+gradle.properties
