@@ -1,5 +1,5 @@
 {
-    "name": "Linux",
+    "name": "Linux_Generic",
     "access": {
         "timeout": 20,
         "prompt_standard": [".*\\$\\s$"],

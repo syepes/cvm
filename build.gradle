@@ -15,7 +15,7 @@ description = "$projectName - Configuration Versioning Manager"
 group = 'com.allthingsmonitoring.utils.CVM'
 archivesBaseName = 'cvm'
 distsDirName = 'dist'
-version = '1.0.0'
+version = '1.1.0'
 
 def authorString = 'Sebastian YEPES FERNANDEZ (syepes@gmail.com)'
 def copyrightString = 'Copyright &#169; 2014 &#8211; Sebastian YEPES FERNANDEZ All Rights Reserved.'

@@ -1,5 +1,5 @@
 {
-    "name": "JuniperNetworks",
+    "name": "JuniperNetworks_Generic",
     "access": {
         "timeout": 30,
         "prompt_standard": [".*->\\s$",".*Accept this agreement.*"],

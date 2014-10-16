@@ -4,6 +4,7 @@ import ch.qos.logback.core.status.OnConsoleStatusListener
 import ch.qos.logback.core.rolling.RollingFileAppender
 import ch.qos.logback.core.rolling.FixedWindowRollingPolicy
 import ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy
+import ch.qos.logback.core.rolling.TimeBasedRollingPolicy
 import static ch.qos.logback.classic.Level.*
 import ch.qos.logback.classic.filter.*
 
@@ -67,7 +68,7 @@ void setupAppenders(String baseName, Map defaultLevels) {
     }
     sift {
       String filePath
-      if (device == baseName){
+      if (device == baseName) {
         filePath = "./logs/${device}.log"
       } else {
         filePath = "./logs/devices/${device}.log"
@@ -79,13 +80,20 @@ void setupAppenders(String baseName, Map defaultLevels) {
           pattern = "%-35(%d{dd-MM-yyyy - HH:mm:ss.SSS} [${HOSTNAME}] ${pid}:[%thread]) %highlight(%-5level) %logger - %msg%n%rEx"
         }
 
-        rollingPolicy(FixedWindowRollingPolicy) {
-          fileNamePattern = "${filePath}.%i"
-          minIndex = 1
-          maxIndex = 5
-        }
-        triggeringPolicy(SizeBasedTriggeringPolicy) {
-          maxFileSize = "100MB"
+        if (device == baseName) {
+          rollingPolicy(TimeBasedRollingPolicy) {
+            fileNamePattern = "./logs/${device}_%d{yyyy-MM-dd}.log"
+            maxHistory = 7
+          }
+        } else {
+          rollingPolicy(FixedWindowRollingPolicy) {
+            fileNamePattern = "${filePath}.%i"
+            minIndex = 1
+            maxIndex = 5
+          }
+          triggeringPolicy(SizeBasedTriggeringPolicy) {
+            maxFileSize = "100MB"
+          }
         }
       }
     }

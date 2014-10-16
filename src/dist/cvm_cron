@@ -6,3 +6,4 @@ export JAVA_OPTS='-server -Xmx1G -Xms350M -XX:+AggressiveOpts -XX:+UseParNewGC -
 
 cd /opt/cvm/
 java -Dpid=$$ -Dapp.env=PROD -jar $PWD/cvm.jar >> $PWD/logs/cvm_schedule.log 2>&1
+rm -rf /var/cache/cgit/*

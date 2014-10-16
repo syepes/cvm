@@ -70,11 +70,12 @@ class CVM {
   ConfigObject cfg
 
   Path gitRepo
-  String authProfilePath
+  String authProfileConfig
+  String deviceProfileConfig
   String deviceProfilePath
   String deviceSource
 
-  HashMap devProfiles = [:]
+  ArrayList devProfiles = []
   ArrayList authProfiles = []
 
   Pattern PAT_IP = ~/(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}/
@@ -85,7 +86,8 @@ class CVM {
     cfg = readConfigFile(cfgFile)
 
     gitRepo = cfg?.git?.repo ? Paths.get(cfg?.git?.repo) : Paths.get('repository')
-    authProfilePath = cfg?.authProfilePath ?: 'authProfiles.groovy'
+    authProfileConfig = cfg?.authProfileConfig ?: 'authProfiles.groovy'
+    deviceProfileConfig = cfg?.deviceProfileConfig ?: 'deviceProfiles.groovy'
     deviceProfilePath = cfg?.deviceProfilePath ?: 'profiles'
     deviceSource = cfg?.deviceSource?.src ?: 'file'
 
@@ -547,7 +549,7 @@ class CVM {
    */
   void saveStringToFile(String device, String storage, String data) {
     if (!data) { log.info "Saving local file: Ignored as content was empty"; return }
-    if (!Files.exists(this.gitRepo.resolve(device))) {
+    if (!this.gitRepo.resolve(device).toFile().exists()) {
       Files.createDirectories(this.gitRepo.resolve(device))
     }
 
@@ -570,12 +572,28 @@ class CVM {
    *
    */
   void validateDeviceProfiles() {
-    Path folder = Paths.get(this.deviceProfilePath)
+    ArrayList pList = []
+    Path pPath = Paths.get(this.deviceProfilePath)
+    Path pCfg = Paths.get(this.deviceProfileConfig)
 
-    if (Files.exists(folder)) {
-      println " Checking Device Profiles ".center(40, '-')
+    println " Checking Device Profiles ".center(40, '-')
 
+    if (pCfg.toFile().exists()) {
+      try {
+        ConfigObject pConfig = readConfigFile(pCfg.toString())
+        pList = pConfig.deviceProfiles
+      } catch(Exception e) {
+        StackTraceUtils.deepSanitize(e)
+        println " - Failed Loading Device Profile Configurations: ${pCfg.toString()}"
+      }
+    } else {
+      println " - The Device Profile Configuration '${pCfg}' does not exist"
+    }
+
+    if (pPath.toFile().exists()) {
       JsonSchema profileSchema
+      int pLoaded = 0
+
       try {
         JsonSchemaFactory factory = JsonSchemaFactory.byDefault()
         def profileMetadata = JsonLoader.fromResource(PROFILE_SCHEMA)
@@ -591,37 +609,43 @@ class CVM {
         return
       }
 
-      new File(folder.toFile().toString()).eachFileMatch(~/.*\.json/) { File it ->
+      pList.each { HashMap pConf ->
+        String pFileName = pConf.profileName +'.json'
+        Path pFile = Paths.get(this.deviceProfilePath).resolve(pFileName)
         ProcessingReport profileReport
         boolean profileValid
 
+        if (!pFile.toFile().exists()) { println " - The Device Profile: ${pConf.type}:'${pFile.toFile().name}' does not exist"; return }
+
         try {
-          def profile = JsonLoader.fromFile(it)
+          def profile = JsonLoader.fromFile(pFile.toFile())
           profileReport = profileSchema.validate(profile)
           profileValid = profileReport.isSuccess()
 
         } catch(com.fasterxml.jackson.core.JsonParseException e) {
           StackTraceUtils.deepSanitize(e)
-          println " - Error Parsing Device Profile '${it.name}': ${e?.message}"
+          println " - Error Parsing Device Profile ${pConf.type}:'${pFile.toFile().name}': ${e?.message}"
           return
         } catch(Exception e) {
           StackTraceUtils.deepSanitize(e)
-          println " - Error Loading Device Profile '${it.name}': ${e?.message}"
+          println " - Error Loading Device Profile ${pConf.type}:'${pFile.toFile().name}': ${e?.message}"
           return
         }
 
         if (profileValid) {
-          println " + The Device Profile: '${it.name}' is Valid"
-
+          println " + The Device Profile: ${pConf.type}:'${pFile.toFile().name}' is Valid"
+          pLoaded++
         } else {
-          println " - The Device Profile: '${it.name}' is NOT Valid:"
+          println " - The Device Profile: ${pConf.type}:'${pFile.toFile().name}' is NOT Valid:"
           println(' - BEGIN REPORT ----')
           profileReport.each { ProcessingMessage msg -> println msg }
           println(' - END REPORT ----')
         }
       }
+
+      println " Loaded Device Profiles (${pLoaded}/${pList.size}) ".center(40, '-')
     } else {
-      println "The Device Profile folder: '${folder}' does not exist"
+      println " - The Device Profile folder: '${pPath}' does not exist"
     }
   }
 
@@ -674,11 +698,11 @@ class CVM {
     }
 
     if (profileValid) {
-      log.info "The Device Profile: '${f.name}' is Valid"
+      log.info "Device Profile: '${f.name}' is Valid"
       return true
 
     } else {
-      log.error "The Device Profile: '${f.name}' is not Valid, ${profileReport}"
+      log.error "Device Profile: '${f.name}' is not Valid, ${profileReport}"
       return false
     }
   }
@@ -688,24 +712,67 @@ class CVM {
    *
    */
   void loadDeviceProfiles() {
-    Path folder = Paths.get(this.deviceProfilePath)
+    Path pCfg = Paths.get(this.deviceProfileConfig)
 
-    if (Files.exists(folder)) {
-      new File(folder.toFile().toString()).eachFileMatch(~/.*\.json/) { File it ->
+    if (pCfg.toFile().exists()) {
+      ArrayList pList = []
 
-        if (validateDeviceProfile(it)) {
-          // TODO Find a better profile management for devices/types
-          HashMap profile = loadDeviceProfile(it.toString())
-          this.devProfiles[profile.name?.toLowerCase()] = profile
-
-        } else {
-          log.warn "The Device Profile: '${it.name}' ignored"
+      try {
+        ConfigObject pConfig = readConfigFile(pCfg.toString())
+        pConfig?.deviceProfiles?.each {
+          // Convert String Expression back to RegEx Patterns
+          if (it.pattern instanceof String) {
+            it.pattern = it.pattern.contains('~/') ? Eval.me(it.pattern) : Pattern.compile(Pattern.quote(it.pattern))
+          } else { it }
         }
+        if (pConfig?.deviceProfiles?.size) {
+          log.debug "Loaded ${pConfig?.deviceProfiles?.size} Device Profile Configurations"
+          pList = pConfig?.deviceProfiles
+        } else {
+          log.error "Failed Loading Device Profile Configurations"
+          return
+        }
+
+      } catch(Exception e) {
+        StackTraceUtils.deepSanitize(e)
+        log.error "Error Loading Device Profile Configuration: ${e?.message}"
+        log.debug "Error Loading Device Profile Configuration: ${getStackTrace(e)}"
       }
+
+      try {
+        pList.each { HashMap pConf ->
+          String pFileName = pConf.profileName +'.json'
+          Path pFile = Paths.get(this.deviceProfilePath).resolve(pFileName)
+
+          if (!pFile.toFile().exists()) { log.error "Device Profile: ${pConf.type}:'${pFile}' does not exist"; return }
+
+          if (validateDeviceProfile(pFile.toFile())) {
+            HashMap profile = loadDeviceProfile(pFile.toString())
+            if (profile) {
+              pConf['profile'] = profile
+              this.devProfiles << pConf
+            } else {
+              log.warn "Device Profile is empty: ${pConf.type}:'${pFile}' ignored"
+            }
+
+          } else {
+            log.warn "Device Profile: ${pConf.type}:'${pFile}' ignored"
+          }
+        }
+
+      } catch(Exception e) {
+        StackTraceUtils.deepSanitize(e)
+        log.error "Error Loading Device Profile: ${e?.message}"
+        log.debug "Error Loading Device Profile: ${getStackTrace(e)}"
+      }
+
+      log.info "Loaded Device Profiles (${this.devProfiles.size}/${pList.size})"
+
     } else {
-      log.error "The Device Profile folder: '${folder}' does not exist"
+      log.error "The Device Profile Configuration '${pCfg}' does not exist"
     }
   }
+
 
   /**
    * Loads the json device profile
@@ -826,18 +893,18 @@ class CVM {
 
 
   /**
-   * Load the Authentication Profiles from the file (authProfilePath)
+   * Load the Authentication Profiles from the file (authProfileConfig)
    *
    * @return ArrayList containing the Authentication Profiles
    */
-  ArrayList loadAuthProfiles() {
-    Path file = Paths.get(this.authProfilePath)
+  void loadAuthProfiles() {
+    Path aCfg = Paths.get(this.authProfileConfig)
 
-    if (Files.exists(file)) {
-      ConfigObject auth
+    if (aCfg.toFile().exists()) {
 
       try {
-        auth = readConfigFile(file.toString())
+        ConfigObject auth = readConfigFile(aCfg.toString())
+
         auth?.authProfiles?.each {
           // Convert String Expression back to RegEx Patterns
           if (it.pattern instanceof String) {
@@ -845,10 +912,10 @@ class CVM {
           } else { it }
         }
         if (auth?.authProfiles?.size) {
-          log.debug "Successfully Loaded ${auth?.authProfiles?.size} Authentication Profiles"
+          log.info "Loaded ${auth?.authProfiles?.size} Authentication Profiles"
           this.authProfiles = auth?.authProfiles
         } else {
-          log.error "Fail Loading Authentication Profiles"
+          log.error "Failed Loading Authentication Profiles"
         }
 
       } catch(Exception e) {
@@ -857,7 +924,7 @@ class CVM {
         log.debug "Error Loading Authentication Profiles: ${getStackTrace(e)}"
       }
     } else {
-      log.error "The Authentication Profile '${file}' does not exist"
+      log.error "The Authentication Profile '${aCfg}' does not exist"
     }
   }
 
@@ -870,69 +937,69 @@ class CVM {
    */
   HashMap buildDeviceProfile (HashMap device) {
     HashMap dprofile = [:]
-
-    if (!this.devProfiles?.containsKey(device?.vendor?.toLowerCase())) {
-      log.error "Could not find any Device Profile for this device: ${device}"
-      return dprofile
-    }
-    if(!this.authProfiles) {
-      log.error "Could not load Authentication Profile"
-      return dprofile
-    }
+    String host = device?.device ==~ PAT_IP ? device?.device : device?.device?.split('\\.')?.getAt(0)?.toLowerCase()
 
     try {
+      boolean foundProfile = false
       boolean foundAuth = false
-      dprofile.access = this.devProfiles[device?.vendor?.toLowerCase()].access
-      dprofile.commands = this.devProfiles[device?.vendor?.toLowerCase()].commands
-      dprofile.auth = ['host':device?.device,
-                       'port': device?.port?.toInteger() ?: 22,
-                       'timeout':this.devProfiles[device?.vendor?.toLowerCase()].access.timeout]
 
-      // First priority, find device specific usr/pwd
-      for ( a in this.authProfiles ) {
-        if (a?.type?.toLowerCase() == 'device') {
-          if(device?.device ==~ a.pattern) {
-            log.debug "Found auth profile for specific device: ${device?.device}"
-            dprofile.auth.user = a?.auth?.getAt(0)
-            dprofile.auth.password = a?.auth?.getAt(1)
-            if (a?.auth?.getAt(2)) {
-              //dprofile.auth.port = a?.auth?.getAt(2).toInteger()
-              //TODO ENABLE
-              dprofile.auth.password_enable = a?.auth?.getAt(2).toString()
+      // First priority, find specific device profile by device
+      // Second priority, find specific device profile by vendor
+      lProfile: for ( String type in ['device','vendor'] ) {
+        for ( HashMap p in this.devProfiles ) {
+          if (p?.type?.toLowerCase() == type) {
+            if(device?."$type" ==~ p.pattern) {
+              log.debug "${Thread.currentThread().name}: ${host} Found Device Profile: '${type}:${p?.profileName}'"
+              dprofile = p?.profile
+              foundProfile = true
+              break lProfile
             }
-            foundAuth = true
-            break
           }
         }
       }
+      if (!foundProfile) { log.debug "${Thread.currentThread().name}: ${host} Did not find any matching Device Profile" }
 
-      if (!foundAuth) {
+      // Load Authentication
+      if (foundProfile) {
+        dprofile.auth = ['host':device?.device,
+                         'port': device?.port?.toInteger() ?: 22,
+                         'timeout':dprofile.access.timeout]
+
+        // First priority, find device specific usr/pwd
         // Second priority, find vendor specific usr/pwd
-        for ( a in this.authProfiles ) {
-          if (a?.type?.toLowerCase() == 'vendor') {
-            if(device?.vendor ==~ a.pattern) {
-              log.debug "Found auth profile for specific vendor: ${device?.vendor}"
-              dprofile.auth.user = a?.auth?.getAt(0)
-              dprofile.auth.password = a?.auth?.getAt(1)
-              if (a?.auth?.getAt(2)) {
-                //dprofile.auth.port = a?.auth?.getAt(2).toInteger()
-                dprofile.auth.password_enable = a?.auth?.getAt(2).toString()
+        lAuth: for ( String type in ['device','vendor'] ) {
+          for ( HashMap a in this.authProfiles ) {
+            if (a?.type?.toLowerCase() == type) {
+              if(device?."$type" ==~ a.pattern) {
+                log.debug "${Thread.currentThread().name}: ${host} Found Auth Profile: '${type}:${a.pattern}'"
+                dprofile.auth.user = a?.auth?.getAt(0)
+                dprofile.auth.password = a?.auth?.getAt(1)
+                if (a?.auth?.getAt(2)) {
+                  //dprofile.auth.port = a?.auth?.getAt(2).toInteger()
+                  //TODO ENABLE
+                  dprofile.auth.password_enable = a?.auth?.getAt(2).toString()
+                }
+                foundAuth = true
+                break lAuth
               }
-              break
             }
           }
         }
+
+        if (!foundAuth) { log.debug "${Thread.currentThread().name}: ${host} Did not find any matching Auth Profile" }
       }
+
+      if (!foundProfile || !foundAuth) { dprofile.clear() }
 
     } catch(Exception e) {
       StackTraceUtils.deepSanitize(e)
-      log.error "Error building profile for the device ${device}: ${e?.message}"
-      log.debug "Error building profile for the device ${device}: ${getStackTrace(e)}"
+      log.error "${Thread.currentThread().name}: ${host} Error building profile: ${e?.message}"
+      log.debug "${Thread.currentThread().name}: ${host} Error building profile: ${getStackTrace(e)}"
       dprofile.clear()
     }
 
     if (!dprofile) {
-      log.error "Could not find any matching Device Profile for this device: ${device}"
+      log.debug "${Thread.currentThread().name}: ${host} Could not find any matching Device/Auth Profile for this device"
     }
 
     return dprofile
@@ -949,13 +1016,13 @@ class CVM {
       String fpath = this.cfg?.deviceSource?.file_path ?: 'deviceList.groovy'
       Path file = Paths.get(fpath)
 
-      if (Files.exists(file)) {
+      if (file.toFile().exists()) {
         ConfigObject devCfg
 
         try {
           devCfg = readConfigFile(file.toString())
           if (devCfg?.deviceList) {
-            log.info "Successfully Loaded ${devCfg.deviceList.size} Devices from '${this.deviceSource}'"
+            log.info "Loaded ${devCfg.deviceList.size} Devices from '${this.deviceSource}'"
             return devCfg.deviceList
           }
 
@@ -970,7 +1037,7 @@ class CVM {
 
     } else if(this.deviceSource?.toLowerCase() == 'nnmi') {
       ArrayList devList = buildNNMiDeviceList(this.cfg?.deviceSource?.nnmi_deviceTypes as ArrayList, this.cfg?.deviceSource?.nnmi_nodeGroup)
-      log.info "Successfully Loaded ${devList.size} Devices from '${this.deviceSource}'"
+      log.info "Loaded ${devList.size} Devices from '${this.deviceSource}'"
       return devList
 
     } else {
@@ -1002,6 +1069,7 @@ class CVM {
   void collectData(ArrayList deviceList) {
     if(!deviceList) { return }
     if(!this.devProfiles) { return }
+    if(!this.authProfiles) { return }
 
     try {
       Date timeStart = new Date()
@@ -1014,8 +1082,10 @@ class CVM {
           String type = d?.type?.toLowerCase() ?: 'other'
           log.info "${Thread.currentThread().name}: ${host} (${d?.vendor?.toLowerCase()}/${d?.model?.toLowerCase()}/${type})"
 
-          MDC.put('device', host)
           final HashMap dprofile = buildDeviceProfile(d)
+          if (!dprofile) { log.error "${Thread.currentThread().name}: ${host} - No Device/Auth Profile found, skipping device"; return }
+
+          MDC.put('device', host)
           final HashMap con = deviceShellOpen(dprofile)
           if (con) {
             devicePostLoginCommands(con, dprofile.access as HashMap)
@@ -1176,7 +1246,10 @@ class CVM {
   static void main(String[] args) throws Exception {
     addShutdownHook { log.info "Shuting down app..." }
 
-    CliBuilder cli = new CliBuilder(usage: '[-h] [-pc] ([-st <Type RegEx>] [-sn <Node RegEx>] [-ld]) [No paramaters Run on All Devices]', stopAtNonOption: false)
+    CliBuilder cli = new CliBuilder(usage: '[-h] [-pc] ([-st <Type RegEx>] [-sn <Node RegEx>] [-ld])',
+                                    header: '\nAvailable options::\n',
+                                    footer: '\nNote: Execution without any parameters runs on All Devices.\n',
+                                    stopAtNonOption: false)
     cli.h(longOpt:'help', 'Usage information')
     cli.st(longOpt:'stype', 'Select Type, OPTIONAL', argName:'RegEx', required:false, type:String, args:1)
     cli.sn(longOpt:'snode', 'Select Node, OPTIONAL', argName:'RegEx', required:false, type:String, args:1)
@@ -1184,7 +1257,7 @@ class CVM {
     cli.pc(longOpt:'pcheck', 'Device Profile Check, OPTIONAL', required:false)
 
     OptionAccessor opt = cli.parse(args)
-    if (!opt){ return }
+    if (!opt){ System.exit(-1) }
     if (opt.h) {
       cli.usage()
       return
@@ -1226,6 +1299,7 @@ class CVM {
     } catch (Exception e) {
       StackTraceUtils.deepSanitize(e)
       log.error "Main exception: ${e?.message}"
+      System.exit(-1)
     }
   }
 }

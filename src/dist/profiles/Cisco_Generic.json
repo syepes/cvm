@@ -1,5 +1,5 @@
 {
-    "name": "Cisco",
+    "name": "Cisco_Generic",
     "access": {
         "timeout": 30,
         "prompt_standard": [".*#\\s*$"],

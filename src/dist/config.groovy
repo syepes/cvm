@@ -1,7 +1,8 @@
 // Absolute or Relative Paths
 git.repo                      = $/repository/$
+authProfileConfig             = $/authProfiles.groovy/$
+deviceProfileConfig           = $/deviceProfiles.groovy/$
 deviceProfilePath             = $/profiles/$
-authProfilePath               = $/authProfiles.groovy/$
 
 deviceSource.src              = 'NNMi' // file, NNMi
 
