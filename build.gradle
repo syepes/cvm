@@ -32,6 +32,8 @@ configure([compileGroovy, compileTestGroovy]) {
   groovyOptions.fork(memoryInitialSize: '128M', memoryMaximumSize: '1G')
   groovyOptions.encoding = 'UTF-8'
   //groovyOptions.optimizationOptions.indy = true
+  sourceCompatibility = 1.7
+  targetCompatibility = 1.7
 }
 
 //configurations.compile.transitive = false

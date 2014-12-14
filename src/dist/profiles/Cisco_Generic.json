@@ -4,7 +4,7 @@
         "timeout": 30,
         "prompt_standard": [".*#\\s*$"],
         "cmds_superusr": [],
-        "expect_superusr": [],
+        "expect_superusr_prompt": [],
         "expect_timeout": 30,
         "expect_bufferSize": 3072,
         "cmds_disable_more_prompt": ["terminal length 0"],
