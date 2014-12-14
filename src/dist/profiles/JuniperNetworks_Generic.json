@@ -3,12 +3,14 @@
     "access": {
         "timeout": 30,
         "prompt_standard": [".*->\\s$",".*Accept this agreement.*"],
-        "explet_timeout": 30,
-        "explet_bufferSize": 3072,
+        "cmds_superusr": [],
+        "expect_superusr_prompt": [],
+        "expect_timeout": 30,
+        "expect_bufferSize": 3072,
         "cmds_disable_more_prompt": ["set console page 0"],
-        "explet_disable_more_prompt": [".*->\\s$"],
+        "expect_disable_more_prompt": [".*->\\s$"],
         "cmds_post_login": ["y"],
-        "explet_post_login": [".*->\\s$"],
+        "expect_post_login": [".*->\\s$"],
         "cmds_disconnect": ["exit","n"]
     },
     "commands": [
@@ -16,8 +18,8 @@
         "name": "get-config",
         "storage": "get-config.cfg",
         "send": ["get config"],
-        "explet": ["\\r\\n.*->\\s$"],
-        "explet_timeout": 180,
+        "expect": ["\\r\\n.*->\\s$"],
+        "expect_timeout": 180,
         "strip_top": 0,
         "strip_down": 0,
         "cleanup_patterns": ["/\\r/g","", "/(set admin password).*/g","!$1 <REMOVED>", "/(set admin user.*password).*(privilege.*)/g","!$1 <REMOVED> $2"]
@@ -26,11 +28,11 @@
         "name": "get-system",
         "storage": "get-system.cfg",
         "send": ["get system"],
-        "explet": ["\\r\\n.*->\\s$"],
-        "explet_timeout": 30,
+        "expect": ["\\r\\n.*->\\s$"],
+        "expect_timeout": 30,
         "strip_top": 0,
         "strip_down": 0,
-        "cleanup_patterns": ["/\\r/g","", "/(?m)^Up.*seconds Since.*/g","", "/(?m)^Date.*/g",""]
+        "cleanup_patterns": ["/\\r/g","", "/(?m)^Up.*seconds Since.*/g","", "/(?m)^Date.*/g","", "/(status change:).*/g","$1<REMOVED>"]
       }
     ]
 }

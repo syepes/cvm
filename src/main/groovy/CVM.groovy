@@ -96,7 +96,6 @@ class CVM {
   }
 
 
-
   /**
    * Load configuration settings
    *
@@ -150,6 +149,7 @@ class CVM {
     return manifest.getMainAttributes()
   }
 
+
   // Gets the StackTrace and returns a string
   String getStackTrace(Throwable t) {
     StringWriter sw = new StringWriter()
@@ -159,6 +159,7 @@ class CVM {
     sw.flush()
     return sw.toString()
   }
+
 
   /**
    * ExpectIt Debuging
@@ -177,6 +178,7 @@ class CVM {
     for (int i = 0; i <= r.groupCount(); i++) { log.trace "eit.match(${i}): ${r.group(i)}" }
     log.trace "eit.fullOutput: ${r.getBefore()}"
   }
+
 
   /**
    * Setup Logger for the SSH
@@ -215,8 +217,8 @@ class CVM {
     String password = dprofile?.auth?.password
     int sshTimeout = dprofile?.auth?.timeout ? dprofile?.auth?.timeout*1000 : 1000
 
-    Long timeout = dprofile?.access?.explet_timeout ? dprofile?.access?.explet_timeout*1000 : null
-    int bufferSize = dprofile?.access?.explet_bufferSize ?: 1024
+    Long timeout = dprofile?.access?.expect_timeout ? dprofile?.access?.expect_timeout*1000 : null
+    int bufferSize = dprofile?.access?.expect_bufferSize ?: 1024
 
     JSch client = new JSch()
     client.setLogger(new jschLogger())
@@ -241,7 +243,7 @@ class CVM {
       channel.connect(sshTimeout)
 
       Result r
-      Matcher[] mList = dprofile?.access?.prompt_standard.collect { regexp(it) }
+      Matcher[] mList = dprofile?.access?.prompt_standard.collect { regexp(it.toString()) }
 
       if (timeout) {
         r = eit.expect(timeout, anyOf(mList))
@@ -257,11 +259,45 @@ class CVM {
       }
       eitDebug(r)
 
-    } catch(AssertionError e) {
+      if (dprofile?.access?.cmds_superusr) {
+        try {
+          log.info "Entering SuperUser Mode: ${dprofile?.access?.cmds_superusr}"
+          dprofile?.access?.cmds_superusr?.each { eit.sendLine(it) }
+
+          // TODO Very ugly workaround until I find whats causing some outputs to get mixed
+          sleep(3*1000)
+
+          eit.sendLine(dprofile?.auth?.password_superusr)
+          mList = dprofile?.access?.expect_superusr_prompt?.collect { regexp(it.toString()) }
+
+          // TODO Very ugly workaround until I find whats causing some outputs to get mixed
+          sleep(3*1000)
+
+          if(timeout) {
+            r = eit.expect(timeout, anyOf(mList))
+          } else {
+            r = eit.expect(anyOf(mList))
+          }
+          eitDebug(r)
+          log.info "Successfully entered SuperUser Mode"
+
+        } catch(Exception|ExpectIOException e) {
+          StackTraceUtils.deepSanitize(e)
+          log.error "Failed entering SuperUser Mode: ${e?.message}"
+          log.debug "Failed entering SuperUser Mode: ${getStackTrace(e)}"
+          con.clear()
+
+          dprofile?.access?.cmds_disconnect?.each { eit.sendLine(it.toString()) }
+          channel?.disconnect()
+          eit?.close()
+        }
+      }
+
+    } catch(ExpectIOException e) {
       log.error "Failed to detect shell prompt: '${dprofile.access.prompt_standard}' of the device: ${host}:${port}@${user} - ${e?.message}"
       con.clear()
 
-      dprofile?.access?.cmds_disconnect?.each { eit.sendLine(it) }
+      dprofile?.access?.cmds_disconnect?.each { eit.sendLine(it.toString()) }
       channel?.disconnect()
       eit?.close()
 
@@ -291,7 +327,7 @@ class CVM {
     int timeout = aprofile.timeout * 1000
 
     try {
-      aprofile?.cmds_disconnect?.each { con.eit.sendLine(it) }
+      aprofile?.cmds_disconnect?.each { con.eit.sendLine(it.toString()) }
 
       Result r = con.eit.expect(timeout, eof())
       if (r.isSuccessful()) {
@@ -301,7 +337,7 @@ class CVM {
       }
       eitDebug(r)
 
-    } catch(Exception|AssertionError e) {
+    } catch(Exception|ExpectIOException e) {
       StackTraceUtils.deepSanitize(e)
       log.error "Failed to correctly logged off device: ${e?.message}"
       log.debug "Failed to correctly logged off device: ${getStackTrace(e)}"
@@ -312,6 +348,7 @@ class CVM {
       con?.eit?.close()
     }
   }
+
 
   /**
    * Build Expect session
@@ -331,10 +368,10 @@ class CVM {
                                 .withEchoInput(new DebugReceive())
                                 .withBufferSize(bufferSize)
                                 .withInputFilters(eitFilters)
-                                .withErrorOnTimeout(true)
+                                .withExceptionOnFailure()
                                 .build()
 
-     } catch(Exception|AssertionError e) {
+     } catch(Exception|ExpectIOException e) {
        StackTraceUtils.deepSanitize(e)
        log.error "ExpectBuilder exception: ${e?.message}"
        log.debug "ExpectBuilder exception: ${getStackTrace(e)}"
@@ -351,41 +388,18 @@ class CVM {
    * @param aprofile Device Access Profile
    */
   void devicePostLoginCommands(HashMap con, HashMap aprofile) {
-      if (aprofile?.cmds_post_login) {
-        try {
-          log.info "Sending Post Login cmds: ${aprofile?.cmds_post_login}"
-          aprofile?.cmds_post_login?.each { con.eit.sendLine(it) }
-
-          Result r
-          Matcher[] mList = aprofile?.explet_post_login?.collect { regexp(it) }
-
-          Long timeout = aprofile?.explet_timeout ? aprofile?.explet_timeout*1000 : null
-          if(timeout) {
-            r = con.eit.expect(timeout, anyOf(mList))
-          } else {
-            r = con.eit.expect(anyOf(mList))
-          }
-          eitDebug(r)
-
-        } catch(Exception|AssertionError e) {
-          StackTraceUtils.deepSanitize(e)
-          log.error "Disabling more prompt exception: ${e?.message}"
-          log.debug "Disabling more prompt exception: ${getStackTrace(e)}"
-        }
-      }
-
       if (aprofile?.cmds_disable_more_prompt) {
         try {
           log.info "Disabling more prompt: ${aprofile?.cmds_disable_more_prompt}"
           aprofile?.cmds_disable_more_prompt?.each { con.eit.sendLine(it) }
 
           Result r
-          Matcher[] mList = aprofile?.explet_disable_more_prompt?.collect { regexp(it) }
+          Matcher[] mList = aprofile?.expect_disable_more_prompt?.collect { regexp(it.toString()) }
 
           // TODO Very ugly workaround until I find whats causing some outputs to get mixed
           sleep(3*1000)
 
-          Long timeout = aprofile?.explet_timeout ? aprofile?.explet_timeout*1000 : null
+          Long timeout = aprofile?.expect_timeout ? aprofile?.expect_timeout*1000 : null
           if(timeout) {
             r = con.eit.expect(timeout, anyOf(mList))
           } else {
@@ -393,7 +407,30 @@ class CVM {
           }
           eitDebug(r)
 
-        } catch(Exception|AssertionError e) {
+        } catch(Exception|ExpectIOException e) {
+          StackTraceUtils.deepSanitize(e)
+          log.error "Disabling more prompt exception: ${e?.message}"
+          log.debug "Disabling more prompt exception: ${getStackTrace(e)}"
+        }
+      }
+
+      if (aprofile?.cmds_post_login) {
+        try {
+          log.info "Sending Post Login cmds: ${aprofile?.cmds_post_login}"
+          aprofile?.cmds_post_login?.each { con.eit.sendLine(it) }
+
+          Result r
+          Matcher[] mList = aprofile?.expect_post_login?.collect { regexp(it.toString()) }
+
+          Long timeout = aprofile?.expect_timeout ? aprofile?.expect_timeout*1000 : null
+          if(timeout) {
+            r = con.eit.expect(timeout, anyOf(mList))
+          } else {
+            r = con.eit.expect(anyOf(mList))
+          }
+          eitDebug(r)
+
+        } catch(Exception|ExpectIOException e) {
           StackTraceUtils.deepSanitize(e)
           log.error "Disabling more prompt exception: ${e?.message}"
           log.debug "Disabling more prompt exception: ${getStackTrace(e)}"
@@ -417,7 +454,7 @@ class CVM {
     ArrayList rList = []
     cmds?.each { cmd ->
       HashMap r = [:]
-      Long timeout = cmd?.explet_timeout ? cmd?.explet_timeout*1000 : null
+      Long timeout = cmd?.expect_timeout ? cmd?.expect_timeout*1000 : null
 
       try {
         log.info "+Run: ${cmd?.send}"
@@ -425,8 +462,8 @@ class CVM {
         log.trace "eit.sending: ${cmd?.send}"
         cmd?.send?.each { con.eit.sendLine(it) }
 
-        Matcher[] mList = cmd?.explet?.collect { regexp(it) }
-        log.trace "eit.explet: ${mList}"
+        Matcher[] mList = cmd?.expect?.collect { regexp(it.toString()) }
+        log.trace "eit.expect: ${mList}"
 
         // TODO Very ugly workaround until I find whats causing some outputs to get mixed
         sleep(3*1000)
@@ -445,7 +482,7 @@ class CVM {
 
         saveStringToFile(device, cmd?.storage, fullOutputStriped)
 
-      } catch(Exception|AssertionError e) {
+      } catch(Exception|ExpectIOException e) {
         rList << [(cmd?.name): false]
 
         StackTraceUtils.deepSanitize(e)
@@ -500,6 +537,7 @@ class CVM {
     dataList?.join('\n') ?: data
   }
 
+
   /**
    * CleanUp the output
    *
@@ -539,7 +577,6 @@ class CVM {
   }
 
 
-
   /**
    * Save the gathered data to the local FileSystem
    *
@@ -564,7 +601,6 @@ class CVM {
       log.debug "Error svaing local file to ${file}: ${getStackTrace(e)}"
     }
   }
-
 
 
   /**
@@ -649,6 +685,7 @@ class CVM {
     }
   }
 
+
   /**
    * Validate that Device Profile has the correct structure
    *
@@ -706,6 +743,7 @@ class CVM {
       return false
     }
   }
+
 
   /**
    * Generates the device profile data structure
@@ -796,7 +834,6 @@ class CVM {
   }
 
 
-
   /**
    * Open/Create Git Repository
    *
@@ -817,6 +854,7 @@ class CVM {
     }
     return git
   }
+
 
   /**
    * Create Git Repository
@@ -846,6 +884,7 @@ class CVM {
     return git
   }
 
+
   /**
    * Add and Commit Git Repository
    *
@@ -857,6 +896,7 @@ class CVM {
     add2Repo(git, path)
     commit(git, msg)
   }
+
 
   /**
    * Add File/Folder to the Git Repository
@@ -874,6 +914,7 @@ class CVM {
       log.debug "Error adding file '${pathToAdd}' to Git Repository: ${getStackTrace(e)}"
     }
   }
+
 
   /**
    * Commit staged files
@@ -975,9 +1016,8 @@ class CVM {
                 dprofile.auth.user = a?.auth?.getAt(0)
                 dprofile.auth.password = a?.auth?.getAt(1)
                 if (a?.auth?.getAt(2)) {
-                  //dprofile.auth.port = a?.auth?.getAt(2).toInteger()
-                  //TODO ENABLE
-                  dprofile.auth.password_enable = a?.auth?.getAt(2).toString()
+                  log.debug "${Thread.currentThread().name}: ${host} Found SuperUser Mode Auth"
+                  dprofile.auth.password_superusr = a?.auth?.getAt(2)?.toString()
                 }
                 foundAuth = true
                 break lAuth
@@ -1048,6 +1088,7 @@ class CVM {
     return []
   }
 
+
   /**
    * Get DeviceList from either NNMi or File deviceList.groovy
    *
@@ -1109,7 +1150,6 @@ class CVM {
       log.error "Collecting Process Error: ${e?.message}"
       log.debug "Collecting Process Error: ${getStackTrace(e)}"
     }
-    return
   }
 
 
@@ -1124,35 +1164,48 @@ class CVM {
     if(!ng) { return ngCache }
     ng = URLEncoder.encode(ng,'UTF-8')
 
+    HttpURLConnection con
     String host = this.cfg?.deviceSource?.nnmi_vip
     String usr = this.cfg?.deviceSource?.nnmi_usr
     String pwd = this.cfg?.deviceSource?.nnmi_pwd
     String url = "http://${host}/jmx-console/HtmlAdaptor?action=invokeOpByName&name=com.hp.ov.nms.monitoring%3Ambean%3DNodeGroupAssignmentCacheService&methodName=dumpCacheForGroup&argType=java.lang.String&arg0=${ng}"
-
     String authString = "${usr}:${pwd}".getBytes().encodeBase64().toString()
-    HttpURLConnection con = url.toURL().openConnection()
-    con.setRequestProperty("Authorization", "Basic ${authString}")
-    con.connect()
 
-    if (con.getResponseCode() == 200) {
-      // Parse HTML
-      XmlSlurper slurper = new XmlSlurper()
-      slurper.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-      slurper.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
 
-      NodeChild html = slurper.parseText(con.getContent().text)
-      html.body.pre.toString().eachLine { String it ->
-        if (!it) { return }
-        ArrayList nd = it.split(': ')
-        ngCache[nd?.getAt(0)] = nd?.getAt(1)
+    try {
+      con = url.toURL().openConnection()
+      con.setRequestProperty("Authorization", "Basic ${authString}")
+      con.connect()
+
+      if (con.getResponseCode() == 200) {
+        // Parse HTML
+        XmlSlurper slurper = new XmlSlurper()
+        slurper.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+        slurper.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+
+        NodeChild html = slurper.parseText(con.getContent().text)
+        html.body.pre.toString().eachLine { String it ->
+          if (!it) { return }
+          ArrayList nd = it.split(': ')
+          ngCache[nd?.getAt(0)] = nd?.getAt(1)
+        }
+        log.trace "Loaded NNMi NodeGroup Assignment Cache ${ngCache.keySet().size()}, RC: ${con.getResponseCode()} (${con.getResponseMessage()})"
+        return ngCache
+      } else {
+        log.error "Could not load NNMi NodeGroup Assignment Cache, RC: ${con.getResponseCode()} (${con.getResponseMessage()})"
+        return ngCache
       }
-      log.trace "Loaded NNMi NodeGroup Assignment Cache ${ngCache.keySet().size()}, RC: ${con.getResponseCode()} (${con.getResponseMessage()})"
-      return ngCache
-    } else {
-      log.error "Could not load NNMi NodeGroup Assignment Cache, RC: ${con.getResponseCode()} (${con.getResponseMessage()})"
-      return ngCache
+
+    } catch(Exception e) {
+      StackTraceUtils.deepSanitize(e)
+      log.error "Could not load NNMi NodeGroup Assignment Cache: ${e?.message}"
+      log.debug "Could not load NNMi NodeGroup Assignment Cache: ${getStackTrace(e)}"
+      ngCache.clear()
     }
+
+    return ngCache
   }
+
 
   /**
    * Retrieves nodes from NNMi of the specified deviceCategory
@@ -1164,9 +1217,6 @@ class CVM {
     String host = this.cfg?.deviceSource?.nnmi_vip
     String usr = this.cfg?.deviceSource?.nnmi_usr
     String pwd = this.cfg?.deviceSource?.nnmi_pwd
-
-    SOAPClient client = new SOAPClient("http://${host}/NodeBeanService/NodeBean?wsdl")
-    client.authorization = new HTTPBasicAuthorization(usr, pwd)
 
     SOAPMessageBuilder msg = new SOAPMessageBuilder().build {
       body {
@@ -1190,10 +1240,22 @@ class CVM {
       }
     }
 
-    SOAPResponse response = client.send(msg.toString())
-    log.trace "Found NNMi Nodes: ${response.getNodesResponse.return.item.size()} of deviceCategory: ${deviceCategory}"
-    return response.getNodesResponse.return.item
+    try {
+      SOAPClient client = new SOAPClient("http://${host}/NodeBeanService/NodeBean?wsdl")
+      client.authorization = new HTTPBasicAuthorization(usr, pwd)
+
+      SOAPResponse response = client.send(msg.toString())
+      log.trace "Found NNMi Nodes: ${response.getNodesResponse.return.item.size()} of deviceCategory: ${deviceCategory}"
+      return response.getNodesResponse.return.item
+
+    } catch(Exception e) {
+      StackTraceUtils.deepSanitize(e)
+      log.error "Could not retrieve NNMi Nodes: ${e?.message}"
+      log.debug "Could not retrieve NNMi Nodes: ${getStackTrace(e)}"
+      return null
+    }
   }
+
 
   /**
    * Build Device List from NNMi

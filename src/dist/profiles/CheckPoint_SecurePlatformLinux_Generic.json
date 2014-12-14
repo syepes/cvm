@@ -1,0 +1,188 @@
+{
+    "name": "CheckPoint_SecurePlatformLinux_Generic",
+    "access": {
+        "timeout": 30,
+        "prompt_standard": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "cmds_superusr": ["expert"],
+        "expect_superusr_prompt": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 30,
+        "expect_bufferSize": 4096,
+        "cmds_disable_more_prompt": ["scroll off"],
+        "expect_disable_more_prompt": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "cmds_post_login": [],
+        "expect_post_login": [],
+        "cmds_disconnect": ["exit","exit"]
+    },
+    "commands": [
+      {
+        "name": "ifconfig",
+        "storage": "ifconfig.cfg",
+        "send": ["ifconfig -a |egrep -iv 'RX|TX'"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "netstat_routes",
+        "storage": "netstat_routes.cfg",
+        "send": ["netstat -rnv"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "etc_netconf",
+        "storage": "etc_netconf.cfg",
+        "send": ["cat /etc/sysconfig/netconf.C"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "etc_hosts",
+        "storage": "etc_hosts.cfg",
+        "send": ["cat /etc/hosts"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "etc_resolv",
+        "storage": "etc_resolv.cfg",
+        "send": ["cat /etc/resolv.conf"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "etc_snmpd",
+        "storage": "etc_snmpd.cfg",
+        "send": ["cat /etc/snmp/snmpd.conf"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "cpstat-os",
+        "storage": "cpstat-os.cfg",
+        "send": ["cpstat os"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 300,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "fw-ver",
+        "storage": "fw-ver.cfg",
+        "send": ["fw ver"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "fw-stat",
+        "storage": "fw-stat.cfg",
+        "send": ["fw stat -s"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "conf_objects",
+        "storage": "conf_objects_5_0.C.cfg",
+        "send": ["cat $FWDIR/conf/objects_5_0.C"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "conf_rulebases",
+        "storage": "conf_rulebases_5_0.fws.cfg",
+        "send": ["cat $FWDIR/conf/rulebases_5_0.fws"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "conf_fgrulebases",
+        "storage": "conf_fgrulebases_5_0.C.cfg",
+        "send": ["cat $FWDIR/conf/fgrulebases_5_0.fws"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "conf_log_policy",
+        "storage": "conf_log_policy.cfg",
+        "send": ["cat $FWDIR/conf/log_policy.C"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "conf_smtp",
+        "storage": "conf_smtp.cfg",
+        "send": ["cat $FWDIR/conf/smtp.conf"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "conf_thresholds",
+        "storage": "conf_thresholds.cfg",
+        "send": ["cat $FWDIR/conf/thresholds.conf"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 60,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "db_objects",
+        "storage": "db_objects.C.cfg",
+        "send": ["cat $FWDIR/database/objects.C"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 300,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      },
+      {
+        "name": "db_rules",
+        "storage": "db_rules.C.cfg",
+        "send": ["cat $FWDIR/database/rules.C"],
+        "expect": ["\\[.*\\]#\\s*$", ".*#\\s*$"],
+        "expect_timeout": 300,
+        "strip_top": 1,
+        "strip_down": 0,
+        "cleanup_patterns": []
+      }
+    ]
+}

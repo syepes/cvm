@@ -1,10 +1,10 @@
 {
-    "name": "Cisco_Generic",
+    "name": "Cisco-Enable_Generic",
     "access": {
         "timeout": 30,
-        "prompt_standard": [".*#\\s*$"],
-        "cmds_superusr": [],
-        "expect_superusr": [],
+        "prompt_standard": [".*>\\s*$"],
+        "cmds_superusr": ["enable"],
+        "expect_superusr_prompt": [".*#\\s*$"],
         "expect_timeout": 30,
         "expect_bufferSize": 3072,
         "cmds_disable_more_prompt": ["terminal length 0"],

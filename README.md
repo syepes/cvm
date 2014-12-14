@@ -22,11 +22,13 @@ A Brief Overview  of how CVM works:
 
 ## Working Device Profiles
 - Cisco:
-  - Routers/Switchs/Nexus (Using TACACS+ enable mode account)
+  - Routers/Switchs/Nexus
 - Fortinet
   - FortiGate Firewalls
 - JuniperNetworks
   - Juniper
+- Check Point
+  - SecurePlatform Linux
 
 ## Requirements
 - [Java](http://www.java.com) 1.7+

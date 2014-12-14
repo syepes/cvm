@@ -1,13 +1,15 @@
 {
-    "name": "Fortinet_Generic",
+    "name": "Fortinet-Full_Generic",
     "access": {
         "timeout": 30,
         "prompt_standard": [".*\\$\\s+$", ".*#\\s+$"],
-        "explet_timeout": 30,
-        "explet_bufferSize": 4096,
+        "cmds_superusr": [],
+        "expect_superusr_prompt": [],
+        "expect_timeout": 30,
+        "expect_bufferSize": 4096,
         "cmds_disable_more_prompt": ["config system console","set output standard","end"],
-        "explet_disable_more_prompt": ["(?ms)\\(console\\)\\s\\$\\send.*\\$\\s+$"],
-        "explet_post_login": [],
+        "expect_disable_more_prompt": ["(?ms)\\(console\\)\\s\\$\\send.*\\$\\s+$"],
+        "expect_post_login": [],
         "cmds_disconnect": ["exit"]
     },
     "commands": [
@@ -15,8 +17,8 @@
         "name": "system_status",
         "storage": "system_status.cfg",
         "send": ["get system status"],
-        "explet": ["\\r\\n.*\\$\\s+$"],
-        "explet_timeout": 30,
+        "expect": ["\\r\\n.*\\$\\s+$"],
+        "expect_timeout": 30,
         "strip_top": 0,
         "strip_down": 0,
         "cleanup_patterns": ["/\\r/g","", "/ ?--More--[ \\S]*[\\s\\cH]+\\cH/g","", "/(?i)System time.*/",""]
@@ -25,8 +27,8 @@
         "name": "hardware_status",
         "storage": "hardware_status.cfg",
         "send": ["get hardware status"],
-        "explet": ["\\r\\n.*\\$\\s+$"],
-        "explet_timeout": 30,
+        "expect": ["\\r\\n.*\\$\\s+$"],
+        "expect_timeout": 30,
         "strip_top": 0,
         "strip_down": 0,
         "cleanup_patterns": ["/\\r/g","", "/ ?--More--[ \\S]*[\\s\\cH]+\\cH/g","", "/(?i)System time.*/",""]
@@ -35,8 +37,8 @@
         "name": "system_interface",
         "storage": "system_interface.cfg",
         "send": ["show system interface"],
-        "explet": ["\\r\\n.*\\$\\s+$"],
-        "explet_timeout": 30,
+        "expect": ["\\r\\n.*\\$\\s+$"],
+        "expect_timeout": 30,
         "strip_top": 0,
         "strip_down": 0,
         "cleanup_patterns": ["/\\r/g","", "/ ?--More--[ \\S]*[\\s\\cH]+\\cH/g","", "/(?i)System time.*/",""]
@@ -45,8 +47,8 @@
         "name": "full-configuration",
         "storage": "full-configuration.cfg",
         "send": ["show full-configuration"],
-        "explet": ["\\r\\n.*\\$\\s+$"],
-        "explet_timeout": 300,
+        "expect": ["\\r\\n.*\\$\\s+$"],
+        "expect_timeout": 300,
         "strip_top": 0,
         "strip_down": 0,
         "cleanup_patterns": ["/\\r/g","", "/ ?--More--[ \\S]*[\\s\\cH]+\\cH/g","", "/(?i)System time.*/","", "/(.*set\\s+.*[password|passwd|key].*\\s+ENC)\\s+.*/g","$1 <REMOVED>", "/(?s)-----BEGIN RSA PRIVATE KEY-----.*-----END RSA PRIVATE KEY-----/g","<REMOVED>", "/(?m)^(#conf_file_ver=).*/g","$1<REMOVED>"]
