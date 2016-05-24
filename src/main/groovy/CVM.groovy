@@ -83,6 +83,9 @@ class CVM {
 
 
   CVM(String cfgFile='config.groovy') {
+    Attributes manifest = getManifestInfo()
+    log.info "Initialization ${this.class.name} / Version: ${manifest?.getValue('Specification-Version')} / Built-Date: ${manifest?.getValue('Built-Date')}"
+
     cfg = readConfigFile(cfgFile)
 
     gitRepo = cfg?.git?.repo ? Paths.get(cfg?.git?.repo) : Paths.get('repository')
@@ -91,8 +94,6 @@ class CVM {
     deviceProfilePath = cfg?.deviceProfilePath ?: 'profiles'
     deviceSource = cfg?.deviceSource?.src ?: 'file'
 
-    Attributes manifest = getManifestInfo()
-    log.info "Initialization ${this.class.name} / Version: ${manifest?.getValue('Specification-Version')} / Built-Date: ${manifest?.getValue('Built-Date')}"
   }
 
 
@@ -151,7 +152,7 @@ class CVM {
 
 
   // Gets the StackTrace and returns a string
-  String getStackTrace(Throwable t) {
+  static String getStackTrace(Throwable t) {
     StringWriter sw = new StringWriter()
     PrintWriter pw = new PrintWriter(sw, true)
     t.printStackTrace(pw)
@@ -1358,9 +1359,11 @@ class CVM {
 
       m.collectData(deviceList)
 
+      System.exit(0)
     } catch (Exception e) {
       StackTraceUtils.deepSanitize(e)
       log.error "Main exception: ${e?.message}"
+      log.debug "Main exception: ${getStackTrace(e)}"
       System.exit(-1)
     }
   }

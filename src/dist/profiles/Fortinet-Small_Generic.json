@@ -51,7 +51,7 @@
         "expect_timeout": 300,
         "strip_top": 0,
         "strip_down": 0,
-        "cleanup_patterns": ["/\\r/g","", "/ ?--More--[ \\S]*[\\s\\cH]+\\cH/g","", "/(?i)System time.*/","", "/(.*set\\s+.*[password|passwd|key].*\\s+ENC)\\s+.*/g","$1 <REMOVED>", "/(?s)-----BEGIN RSA PRIVATE KEY-----.*-----END RSA PRIVATE KEY-----/g","<REMOVED>", "/(?m)^(#conf_file_ver=).*/g","$1<REMOVED>"]
+        "cleanup_patterns": ["/\\r/g","", "/ ?--More--[ \\S]*[\\s\\cH]+\\cH/g","", "/(?i)System time.*/","", "/(.*set\\s+.*[password|passwd|key].*\\s+ENC)\\s+.*/g","$1 <REMOVED>", "/(?sm)-----BEGIN RSA PRIVATE KEY-----.*?-----END RSA PRIVATE KEY-----/g","<REMOVED>", "/(?sm)-----BEGIN ENCRYPTED PRIVATE KEY-----.*?-----END ENCRYPTED PRIVATE KEY-----/g","<REMOVED>", "/(?m)^(#conf_file_ver=).*/g","$1<REMOVED>"]
       }
     ]
 }
